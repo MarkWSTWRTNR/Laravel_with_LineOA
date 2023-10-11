@@ -12,7 +12,10 @@ class BookingController extends Controller
      */
     public function index()
     {
-        return response()->json(['name' => 'index']);
+        //
+        $bookings = Booking::select('id', 'bookDate', 'bookTime', 'location')->get();
+        
+        return response()->json($bookings);
     }
 
     /**
@@ -29,6 +32,24 @@ class BookingController extends Controller
     public function store(Request $request)
     {
         //
+        $request->validate([
+            'bookDate' => 'required|date',
+            'bookTime' => 'required',
+            'location' => 'required',
+        ]);
+
+        try {
+            Booking::create($request->post());
+
+            return response()->json([
+                'message' => 'Booking created successfully!!'
+            ]);
+        } catch (\Exception $e) {
+            \Log::error($e->getMessage());
+            return response()->json([
+                'message' => 'Something goes wrong while createing booking!!'
+            ], 500);
+        }
     }
 
     /**
@@ -53,6 +74,25 @@ class BookingController extends Controller
     public function update(Request $request, Booking $booking)
     {
         //
+        $request->validate([
+            'bookDate' => 'required|date',
+            'bookTime' => 'required',
+            'location' => 'required',
+        ]);
+
+        try {
+            $booking->fill($request->post())->update();
+            $booking->save();
+
+            return response()->json([
+                'message' => 'Booking updated successfully!!'
+            ]);
+        } catch (\Exception $e) {
+            \Log::error($e->getMessage());
+            return response()->json([
+                'message' => 'Something goes wrong while updating booking!!'
+            ], 500);
+        }
     }
 
     /**
@@ -61,5 +101,17 @@ class BookingController extends Controller
     public function destroy(Booking $booking)
     {
         //
+        try {
+            $booking->delete();
+
+            return response()->json([
+                'message' => 'Booking deleted successfully!!'
+            ]);
+        } catch (\Exception $e) {
+            \Log::error($e->getMessage());
+            return response()->json([
+                'message' => 'Something goes wrong while deleting booking!!'
+            ], 500);
+        }
     }
 }
