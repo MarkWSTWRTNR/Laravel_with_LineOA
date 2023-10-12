@@ -2,20 +2,25 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\api\BaseController as BaseController;
 use App\Models\Booking;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
 
-class BookingController extends Controller
+class BookingController extends BaseController
 {
     /**
      * Display a listing of the resource.
      */
     public function index()
     {
-        //
-        $bookings = Booking::select('id', 'bookDate', 'bookTime', 'location')->get();
-        
-        return response()->json($bookings);
+        $bookings = Booking::all();
+        if(!$bookings->isEmpty()) {
+            return $this->sendResponse($bookings, 'Booking retrieved successfully!');
+        }
+        else {
+            return $this->sendError('Retrieved data error.', ['error' => 'No data']);
+        }
     }
 
     /**
@@ -31,24 +36,32 @@ class BookingController extends Controller
      */
     public function store(Request $request)
     {
-        //
-        $request->validate([
+        $validator = Validator::make($request->all(), [
+            'name' => 'required',
+            'line_user_id' => 'required',
+            'phone_number' => 'required',
             'bookDate' => 'required|date',
             'bookTime' => 'required',
             'location' => 'required',
         ]);
 
-        try {
-            Booking::create($request->post());
+//        dd($request->all());
+        if ($validator->fails()) {
+            return $this->sendError('Store data error', ['error' => 'Please check the input']);
+        }
+        else {
+            try {
+                $payload = $request->all();
+                $booking = Booking::create($payload);
+                $success['info'] = $booking;
 
-            return response()->json([
-                'message' => 'Booking created successfully!!'
-            ]);
-        } catch (\Exception $e) {
-            \Log::error($e->getMessage());
-            return response()->json([
-                'message' => 'Something goes wrong while createing booking!!'
-            ], 500);
+                return $this->sendResponse($success, 'Product stored successfully!');
+            } catch (\Exception $e) {
+                \Log::error($e->getMessage());
+                return response()->json([
+                    'message' => 'Something goes wrong while createing booking!!'
+                ], 500);
+            }
         }
     }
 

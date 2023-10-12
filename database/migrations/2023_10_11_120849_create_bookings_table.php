@@ -15,6 +15,9 @@ return new class extends Migration
     {
         Schema::create('bookings', function (Blueprint $table) {
             $table->bigIncrements('id');
+            $table->string('name');
+            $table->string('line_user_id');
+            $table->string('phone_number');
             $table->date('bookDate');
             $table->time('bookTime', $precision = 0);
             $table->string('location', 50);
