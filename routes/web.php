@@ -19,5 +19,9 @@ Route::get('/', function () {
 });
 Route::post('/line/webhook', [LineBotController::class, 'webhook']);
 Route::resource('bookings', BookingController::class);
+Route::get('/csrf-token', function() {
+    return response()->json(['csrf_token' => csrf_token()]);
+});
+
 
 
