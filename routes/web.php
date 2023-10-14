@@ -1,8 +1,9 @@
 <?php
 
 use App\Http\Controllers\BookingController;
-use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\LineBotController;
+use Illuminate\Support\Facades\Route;
+
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -18,6 +19,9 @@ Route::get('/', function () {
     return view('welcome');
 });
 Route::post('/line/webhook', [LineBotController::class, 'webhook']);
-Route::resource('bookings', BookingController::class);
+
+Route::post('/bookings', [BookingController::class, 'store']);
+
+
 
 
