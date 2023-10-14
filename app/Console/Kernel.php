@@ -10,10 +10,20 @@ class Kernel extends ConsoleKernel
     /**
      * Define the application's command schedule.
      */
-    protected function schedule(Schedule $schedule): void
+    protected function schedule(Schedule $schedule)
     {
-        // $schedule->command('inspire')->hourly();
+        $schedule->call(function () {
+            $tomorrow = now()->addDay();
+            $bookings = Booking::whereDate('bookDate', $tomorrow)->get();
+
+            foreach ($bookings as $booking) {
+                $lineUserId = $booking->line_user_id;
+                $textMessage = "Reminder: You have a booking scheduled for tomorrow.";
+                LineBotController::sendPushMessage($lineUserId, $textMessage);
+            }
+        })->daily();
     }
+
 
     /**
      * Register the commands for the application.
@@ -24,4 +34,5 @@ class Kernel extends ConsoleKernel
 
         require base_path('routes/console.php');
     }
+
 }

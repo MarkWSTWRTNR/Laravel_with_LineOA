@@ -63,4 +63,25 @@ class LineBotController extends Controller
             Log::error('Error sending message: ' . $e->getMessage());
         }
     }
+    public static function sendPushMessage($userId, $text)
+    {
+        $client = new Client();
+        $response = $client->post('https://api.line.me/v2/bot/message/push', [
+            'headers' => [
+                'Authorization' => 'Bearer ' . env('LINE_CHANNEL_ACCESS_TOKEN'),
+                'Content-Type' => 'application/json',
+            ],
+            'json' => [
+                'to' => $userId,
+                'messages' => [
+                    [
+                        'type' => 'text',
+                        'text' => $text,
+                    ],
+                ],
+            ],
+        ]);
+
+        return $response->getBody();
+    }
 }

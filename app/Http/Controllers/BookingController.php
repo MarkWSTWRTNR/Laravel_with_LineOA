@@ -55,11 +55,16 @@ class BookingController extends BaseController
                 $booking = Booking::create($payload);
                 $success['info'] = $booking;
 
+                // Notify the user
+                $lineUserId = $request->input('line_user_id');
+                $textMessage = "Thank you for your booking. We have successfully scheduled your booking.";
+                LineBotController::sendPushMessage($lineUserId, $textMessage);
+
                 return $this->sendResponse($success, 'Product stored successfully!');
             } catch (\Exception $e) {
                 \Log::error($e->getMessage());
                 return response()->json([
-                    'message' => 'Something goes wrong while createing booking!!'
+                    'message' => 'Something goes wrong while creating booking!!'
                 ], 500);
             }
         }
