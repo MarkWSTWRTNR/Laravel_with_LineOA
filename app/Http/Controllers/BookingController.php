@@ -55,9 +55,16 @@ class BookingController extends BaseController
                 $booking = Booking::create($payload);
                 $success['info'] = $booking;
 
-                // Notify the user
+                $details = sprintf(
+                    "Name: %s\nPhone: %s\nDate: %s\nTime: %s\nLocation: %s",
+                    $booking->name,
+                    $booking->phone_number,
+                    $booking->bookDate,
+                    $booking->bookTime,
+                    $booking->location
+                );
                 $lineUserId = $request->input('line_user_id');
-                $textMessage = "Thank you for your booking. We have successfully scheduled your booking.";
+                $textMessage = "Thank you for your booking. We have successfully scheduled your booking.\n\nDetails:\n" . $details;
                 LineBotController::sendPushMessage($lineUserId, $textMessage);
 
                 return $this->sendResponse($success, 'Product stored successfully!');
