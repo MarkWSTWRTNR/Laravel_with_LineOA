@@ -7,6 +7,10 @@ use App\Models\Booking;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
+use Google_Client;
+use Google_Service_Calendar;
+use Google_Service_Calendar_Event;
+
 class BookingController extends BaseController
 {
     /**
@@ -15,10 +19,9 @@ class BookingController extends BaseController
     public function index()
     {
         $bookings = Booking::all();
-        if(!$bookings->isEmpty()) {
+        if (!$bookings->isEmpty()) {
             return $this->sendResponse($bookings, 'Booking retrieved successfully!');
-        }
-        else {
+        } else {
             return $this->sendError('Retrieved data error.', ['error' => 'No data']);
         }
     }
@@ -45,11 +48,10 @@ class BookingController extends BaseController
             'location' => 'required',
         ]);
 
-//        dd($request->all());
+        //        dd($request->all());
         if ($validator->fails()) {
             return $this->sendError('Store data error', ['error' => 'Please check the input']);
-        }
-        else {
+        } else {
             try {
                 $payload = $request->all();
                 $booking = Booking::create($payload);
@@ -63,6 +65,11 @@ class BookingController extends BaseController
                     $booking->bookTime,
                     $booking->location
                 );
+
+                $event = $this->createGoogleCalendarEvent($booking);
+
+                echo 'Event created: ' . $event->getId();
+
                 $lineUserId = $request->input('line_user_id');
                 $textMessage = "Thank you for your booking. We have successfully scheduled your booking.\n\nDetails:\n" . $details;
                 LineBotController::sendPushMessage($lineUserId, $textMessage);
@@ -71,11 +78,45 @@ class BookingController extends BaseController
             } catch (\Exception $e) {
                 \Log::error($e->getMessage());
                 return response()->json([
-                    'message' => 'Something goes wrong while creating booking!!'
+                    'message' => 'Something goes wrong while creating booking!! : ' . $e->getMessage()
                 ], 500);
             }
         }
     }
+
+    private function createGoogleCalendarEvent(Booking $booking): Google_Service_Calendar_Event
+    {
+        try {
+            $client = new Google_Client();
+            $client->setAuthConfig('C:\Users\user00\Laravel_with_LineOA\client_secret.json');
+            $client->setScopes(Google_Service_Calendar::CALENDAR);
+
+            $service = new Google_Service_Calendar($client);
+
+            $event = new Google_Service_Calendar_Event(array(
+                'summary' => 'Cleaning service',
+                'location' => $booking->location,
+                'description' => 'House ' . $booking->name . 'Contact: ' . $booking->phone_number,
+                'start' => array(
+                    'dateTime' => $booking->bookDate . 'T' . $booking->bookTime,
+                    'timeZone' => 'Asia/Bangkok',
+                ),
+                'end' => array(
+                    'dateTime' => $booking->bookDate . 'T' . $booking->bookTime,
+                    'timeZone' => 'Asia/Bangkok',
+                ),
+            ));
+
+            $calendarId = 'Booking';
+            $event = $service->events->insert($calendarId, $event);
+
+            return $event;
+        } catch (\Exception $e) {
+            \Log::error('Error creating Google Calendar event: ' . $e->getMessage());
+            throw new \Exception('Error creating Google Calendar event: ' . $e->getMessage());
+        }
+    }
+
 
     /**
      * Display the specified resource.
