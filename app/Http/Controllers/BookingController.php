@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\api\BaseController as BaseController;
 use App\Models\Booking;
+use App\Models\AccessToken;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
@@ -66,9 +67,7 @@ class BookingController extends BaseController
                     $booking->location
                 );
 
-                $event = $this->createGoogleCalendarEvent($booking);
-
-                echo 'Event created: ' . $event->getId();
+                $this->createEvent($booking);
 
                 $lineUserId = $request->input('line_user_id');
                 $textMessage = "Thank you for your booking. We have successfully scheduled your booking.\n\nDetails:\n" . $details;
@@ -84,37 +83,52 @@ class BookingController extends BaseController
         }
     }
 
-    private function createGoogleCalendarEvent(Booking $booking): Google_Service_Calendar_Event
+
+    public function createEvent(Booking $booking)
     {
-        try {
-            $client = new Google_Client();
-            $client->setAuthConfig('C:\Users\user00\Laravel_with_LineOA\client_secret.json');
-            $client->setScopes(Google_Service_Calendar::CALENDAR);
+        $accessToken = AccessToken::latest()->first();
 
-            $service = new Google_Service_Calendar($client);
-
-            $event = new Google_Service_Calendar_Event(array(
-                'summary' => 'Cleaning service',
-                'location' => $booking->location,
-                'description' => 'House ' . $booking->name . 'Contact: ' . $booking->phone_number,
-                'start' => array(
-                    'dateTime' => $booking->bookDate . 'T' . $booking->bookTime,
-                    'timeZone' => 'Asia/Bangkok',
-                ),
-                'end' => array(
-                    'dateTime' => $booking->bookDate . 'T' . $booking->bookTime,
-                    'timeZone' => 'Asia/Bangkok',
-                ),
-            ));
-
-            $calendarId = 'Booking';
-            $event = $service->events->insert($calendarId, $event);
-
-            return $event;
-        } catch (\Exception $e) {
-            \Log::error('Error creating Google Calendar event: ' . $e->getMessage());
-            throw new \Exception('Error creating Google Calendar event: ' . $e->getMessage());
+        if (!$accessToken) {
+            return 'Token not found after authorization';
         }
+
+        $access_token = json_decode($accessToken);
+
+        $client = new Google_Client();
+        $client->setAuthConfig(storage_path('\client_secret.json'));
+        $client->setAccessToken($access_token->access_token); // โหลด Token จากฐานข้อมูล
+
+        if ($client->isAccessTokenExpired()) {
+            // หาก Token หมดอายุ คุณสามารถรีเฟรช Token ด้วยรหัสรีเฟรช หากคุณได้รับรหัสรีเฟรชจากผู้ใช้ในขั้นตอน OAuth
+            // รีเฟรช Token และบันทึก Token ใหม่ลงในฐานข้อมูล
+            $refreshedToken = $client->fetchAccessTokenWithRefreshToken($client->getRefreshToken());
+            $accessToken->update(['access_token' => json_encode($refreshedToken)]);
+        }
+
+        $service = new Google_Service_Calendar($client);
+
+        if ($client->isAccessTokenExpired()) {
+            return 'Unable to refresh Token after authorization';
+        }
+
+        $event = new Google_Service_Calendar_Event(array(
+            'summary' => 'Cleaning service',
+            'location' => $booking->location,
+            'description' => 'House ' . $booking->name . 'Contact: ' . $booking->phone_number,
+            'start' => array(
+                'dateTime' => $booking->bookDate . 'T' . $booking->bookTime . ':00+07:00',
+                'timeZone' => 'Asia/Bangkok',
+            ),
+            'end' => array(
+                'dateTime' => $booking->bookDate . 'T' . $booking->bookTime . ':00+07:00',
+                'timeZone' => 'Asia/Bangkok',
+            ),
+        ));
+
+        $calendarId = '95hv75tqqtcisjqi3dinhbqbok@group.calendar.google.com';
+        $event = $service->events->insert($calendarId, $event);
+
+        return 'Successfully scheduled your booking: ' . $event->htmlLink;
     }
 
 
