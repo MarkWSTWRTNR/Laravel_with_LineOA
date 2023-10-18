@@ -1,7 +1,10 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\BookingController;
 use App\Http\Controllers\LineBotController;
+use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\GoogleCalendarController;
+
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -17,3 +20,10 @@ Route::get('/', function () {
     return view('welcome');
 });
 Route::post('/line/webhook', [LineBotController::class, 'webhook']);
+
+Route::post('/bookings', [BookingController::class, 'store']);
+
+Route::get('/auth/google', [GoogleCalendarController::class, 'auth']);
+Route::get('/auth/google/callback', [GoogleCalendarController::class, 'authCallback'])->name('auth.google.callback');
+
+
