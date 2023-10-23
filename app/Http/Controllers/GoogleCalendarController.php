@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Booking;
 use App\Models\AccessToken;
+use Google_Service_Calendar_Event;
 use Illuminate\Http\Request;
 
 use Google_Client;
@@ -15,7 +16,7 @@ class GoogleCalendarController extends Controller
     public function auth()
     {
         $client = new Google_Client();
-        $client->setAuthConfig(storage_path('\client_secret.json'));
+        $client->setAuthConfig(storage_path('client_secret.json'));
         $client->setRedirectUri(route('auth.google.callback'));
         $client->setScopes(Google_Service_Calendar::CALENDAR);
 
@@ -26,21 +27,21 @@ class GoogleCalendarController extends Controller
     public function authCallback(Request $request)
     {
         $client = new Google_Client();
-        $client->setAuthConfig(storage_path('\client_secret.json'));
+        $client->setAuthConfig(storage_path('client_secret.json'));
         $client->setRedirectUri(route('auth.google.callback'));
         $client->setScopes(Google_Service_Calendar::CALENDAR);
 
         if ($request->has('code')) {
             $client->fetchAccessTokenWithAuthCode($request->get('code'));
             $accessToken = $client->getAccessToken();
-            
+
             AccessToken::create(['access_token' => json_encode($accessToken)]);
-            
+
         }
     }
 
 
-    public function createEvent(Booking $booking)
+    public function createEvent(Booking $booking): string
     {
         $accessToken = AccessToken::latest()->first();
 
@@ -49,8 +50,8 @@ class GoogleCalendarController extends Controller
         }
 
         $client = new Google_Client();
-        $client->setAuthConfig(storage_path('\client_secret.json'));
-        $client->setAccessToken(json_decode($accessToken->access_token)); // โหลด Token จากฐานข้อมูล
+        $client->setAuthConfig(storage_path('client_secret.json'));
+        $client->setAccessToken(json_decode($accessToken->access_token, true)); // โหลด Token จากฐานข้อมูล
 
         if ($client->isAccessTokenExpired()) {
             // หาก Token หมดอายุ คุณสามารถรีเฟรช Token ด้วยรหัสรีเฟรช หากคุณได้รับรหัสรีเฟรชจากผู้ใช้ในขั้นตอน OAuth
@@ -68,7 +69,7 @@ class GoogleCalendarController extends Controller
         $event = new Google_Service_Calendar_Event(array(
             'summary' => 'Cleaning service',
             'location' => $booking->location,
-            'description' => 'House ' . $booking->name . 'Contact: ' . $booking->phone_number,
+            'description' => $booking->name . 'Contact: ' . $booking->phone_number,
             'start' => array(
                 'dateTime' => $booking->bookDate . 'T' . $booking->bookTime,
                 'timeZone' => 'Asia/Bangkok',

@@ -49,7 +49,6 @@ class BookingController extends BaseController
             'location' => 'required',
         ]);
 
-        //        dd($request->all());
         if ($validator->fails()) {
             return $this->sendError('Store data error', ['error' => 'Please check the input']);
         } else {
@@ -67,7 +66,8 @@ class BookingController extends BaseController
                     $booking->location
                 );
 
-                $this->createEvent($booking);
+                $GoogleController = new GoogleCalendarController();
+                $GoogleController->createEvent($booking);
 
                 $lineUserId = $request->input('line_user_id');
                 $textMessage = "Thank you for your booking. We have successfully scheduled your booking.\n\nDetails:\n" . $details;
@@ -82,55 +82,6 @@ class BookingController extends BaseController
             }
         }
     }
-
-
-    public function createEvent(Booking $booking)
-    {
-        $accessToken = AccessToken::latest()->first();
-
-        if (!$accessToken) {
-            return 'Token not found after authorization';
-        }
-
-        $access_token = json_decode($accessToken);
-
-        $client = new Google_Client();
-        $client->setAuthConfig(storage_path('\client_secret.json'));
-        $client->setAccessToken($access_token->access_token); // โหลด Token จากฐานข้อมูล
-
-        if ($client->isAccessTokenExpired()) {
-            // หาก Token หมดอายุ คุณสามารถรีเฟรช Token ด้วยรหัสรีเฟรช หากคุณได้รับรหัสรีเฟรชจากผู้ใช้ในขั้นตอน OAuth
-            // รีเฟรช Token และบันทึก Token ใหม่ลงในฐานข้อมูล
-            $refreshedToken = $client->fetchAccessTokenWithRefreshToken($client->getRefreshToken());
-            $accessToken->update(['access_token' => json_encode($refreshedToken)]);
-        }
-
-        $service = new Google_Service_Calendar($client);
-
-        if ($client->isAccessTokenExpired()) {
-            return 'Unable to refresh Token after authorization';
-        }
-
-        $event = new Google_Service_Calendar_Event(array(
-            'summary' => 'Cleaning service',
-            'location' => $booking->location,
-            'description' => 'House ' . $booking->name . 'Contact: ' . $booking->phone_number,
-            'start' => array(
-                'dateTime' => $booking->bookDate . 'T' . $booking->bookTime . ':00+07:00',
-                'timeZone' => 'Asia/Bangkok',
-            ),
-            'end' => array(
-                'dateTime' => $booking->bookDate . 'T' . $booking->bookTime . ':00+07:00',
-                'timeZone' => 'Asia/Bangkok',
-            ),
-        ));
-
-        $calendarId = '95hv75tqqtcisjqi3dinhbqbok@group.calendar.google.com';
-        $event = $service->events->insert($calendarId, $event);
-
-        return 'Successfully scheduled your booking: ' . $event->htmlLink;
-    }
-
 
     /**
      * Display the specified resource.
