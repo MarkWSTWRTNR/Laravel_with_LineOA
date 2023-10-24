@@ -35,10 +35,18 @@ class BookingController extends BaseController
      */
     public function store(Request $request): \Illuminate\Http\JsonResponse
     {
+        // $validator = Validator::make($request->all(), [
+        //     'title' => 'required|string|max:255',
+        //     'startDate' => 'required|date',
+        //     'startTime' => 'required|date_format:H:i',
+        //     'line_user_id' => 'required',
+        //     'phone_number' => 'required|string|max:15',
+        //     'location' => 'required|string|max:50',
+        // ]);
         $validator = Validator::make($request->all(), [
             'title' => 'required|string|max:255',
-            'startDate' => 'required|date',
-            'startTime' => 'required|date_format:H:i',
+            'start' => 'required|date',
+            'end' => 'required|date',
             'line_user_id' => 'required',
             'phone_number' => 'required|string|max:15',
             'location' => 'required|string|max:50',
