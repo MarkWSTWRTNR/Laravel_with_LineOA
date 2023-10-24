@@ -49,10 +49,16 @@ class BookingController extends BaseController
         } else {
             try {
                 $payload = $request->all();
-                $payload['endDate'] = $payload['startDate'];
-                $startTime = strtotime($payload['startTime']);
-                $adjustedEndTime = date('H:i', strtotime('+2 hours', $startTime));
-                $payload['endTime'] = $adjustedEndTime;
+
+                if (!isset($payload['endDate'])) {
+                    $payload['endDate'] = $payload['startDate'];
+                    if (!isset($payload['endTime'])) {
+                        $startTime = strtotime($payload['startTime']);
+                        $adjustedEndTime = date('H:i', strtotime('+2 hours', $startTime));
+                        $payload['endTime'] = $adjustedEndTime;
+                    }
+                }
+
                 $booking = Booking::create($payload);
                 $success['info'] = $booking;
 
