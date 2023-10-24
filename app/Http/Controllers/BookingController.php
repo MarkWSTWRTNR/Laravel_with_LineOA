@@ -4,13 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\api\BaseController as BaseController;
 use App\Models\Booking;
-use App\Models\AccessToken;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
-
-use Google_Client;
-use Google_Service_Calendar;
-use Google_Service_Calendar_Event;
 
 class BookingController extends BaseController
 {
@@ -41,12 +36,12 @@ class BookingController extends BaseController
     public function store(Request $request): \Illuminate\Http\JsonResponse
     {
         $validator = Validator::make($request->all(), [
-            'name' => 'required',
+            'title' => 'required|string|max:255',
+            'startDate' => 'required|date',
+            'startTime' => 'required|date_format:H:i',
             'line_user_id' => 'required',
-            'phone_number' => 'required',
-            'bookDate' => 'required|date',
-            'bookTime' => 'required',
-            'location' => 'required',
+            'phone_number' => 'required|string|max:15',
+            'location' => 'required|string|max:50',
         ]);
 
         if ($validator->fails()) {
@@ -54,20 +49,24 @@ class BookingController extends BaseController
         } else {
             try {
                 $payload = $request->all();
+                $payload['endDate'] = $payload['startDate'];
+                $startTime = strtotime($payload['startTime']);
+                $adjustedEndTime = date('H:i', strtotime('+2 hours', $startTime));
+                $payload['endTime'] = $adjustedEndTime;
                 $booking = Booking::create($payload);
                 $success['info'] = $booking;
 
                 $details = sprintf(
                     "Name: %s\nPhone: %s\nDate: %s\nTime: %s\nLocation: %s",
-                    $booking->name,
+                    $booking->title,
                     $booking->phone_number,
-                    $booking->bookDate,
-                    $booking->bookTime,
+                    $booking->startDate,
+                    $booking->startTime,
                     $booking->location
                 );
 
-                $GoogleController = new GoogleCalendarController();
-                $GoogleController->createEvent($booking);
+                // $GoogleController = new GoogleCalendarController();
+                // $GoogleController->createEvent($booking);
 
                 $lineUserId = $request->input('line_user_id');
                 $textMessage = "Thank you for your booking. We have successfully scheduled your booking.\n\nDetails:\n" . $details;
@@ -106,8 +105,8 @@ class BookingController extends BaseController
     {
         //
         $request->validate([
-            'bookDate' => 'required|date',
-            'bookTime' => 'required',
+            'startDate' => 'required|date',
+            'startTime' => 'required',
             'location' => 'required',
         ]);
 

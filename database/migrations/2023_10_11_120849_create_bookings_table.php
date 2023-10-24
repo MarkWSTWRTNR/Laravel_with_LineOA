@@ -15,11 +15,13 @@ return new class extends Migration
     {
         Schema::create('bookings', function (Blueprint $table) {
             $table->bigIncrements('id');
-            $table->string('name');
+            $table->string('title');
+            $table->date('startDate');
+            $table->time('startTime', $precision = 0);
+            $table->date('endDate');
+            $table->time('endTime', $precision = 0);
             $table->string('line_user_id');
             $table->string('phone_number');
-            $table->date('bookDate');
-            $table->time('bookTime', $precision = 0);
             $table->string('location', 50);
             $table->timestamps();
         });
