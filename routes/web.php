@@ -21,8 +21,8 @@ Route::get('/', function () {
 });
 Route::post('/line/webhook', [LineBotController::class, 'webhook']);
 
-Route::post('/bookings', [BookingController::class, 'store']);
-Route::resource('bookings', BookingController::class);
+Route::resource('/bookings', BookingController::class);
+//Route::post('/bookings', [BookingController::class, 'store']);
 
 Route::get('/auth/google', [GoogleCalendarController::class, 'auth']);
 Route::get('/auth/google/callback', [GoogleCalendarController::class, 'authCallback'])->name('auth.google.callback');

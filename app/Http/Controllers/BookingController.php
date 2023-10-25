@@ -37,8 +37,7 @@ class BookingController extends BaseController
     {
         $validator = Validator::make($request->all(), [
             'title' => 'required|string|max:255',
-            'startDate' => 'required|date',
-            'startTime' => 'required|date_format:H:i',
+            'start' => 'required|date_format:Y-m-d\TH:i:s',
             'line_user_id' => 'required',
             'phone_number' => 'required|string|max:15',
             'location' => 'required|string|max:50',
@@ -50,29 +49,25 @@ class BookingController extends BaseController
             try {
                 $payload = $request->all();
 
-                if (!isset($payload['endDate'])) {
-                    $payload['endDate'] = $payload['startDate'];
-                    if (!isset($payload['endTime'])) {
-                        $startTime = strtotime($payload['startTime']);
-                        $adjustedEndTime = date('H:i', strtotime('+2 hours', $startTime));
-                        $payload['endTime'] = $adjustedEndTime;
-                    }
-                }
+//                if (!isset($payload['endDate'])) {
+//                    $payload['endDate'] = $payload['startDate'];
+//                    if (!isset($payload['endTime'])) {
+//                        $startTime = strtotime($payload['startTime']);
+//                        $adjustedEndTime = date('H:i', strtotime('+2 hours', $startTime));
+//                        $payload['endTime'] = $adjustedEndTime;
+//                    }
+//                }
 
                 $booking = Booking::create($payload);
                 $success['info'] = $booking;
 
                 $details = sprintf(
-                    "Name: %s\nPhone: %s\nDate: %s\nTime: %s\nLocation: %s",
+                    "Name: %s\nPhone: %s\nDateTime: %s\nLocation: %s",
                     $booking->title,
                     $booking->phone_number,
-                    $booking->startDate,
-                    $booking->startTime,
+                    $booking->start,
                     $booking->location
                 );
-
-                // $GoogleController = new GoogleCalendarController();
-                // $GoogleController->createEvent($booking);
 
                 $lineUserId = $request->input('line_user_id');
                 $textMessage = "Thank you for your booking. We have successfully scheduled your booking.\n\nDetails:\n" . $details;
@@ -111,8 +106,7 @@ class BookingController extends BaseController
     {
         //
         $request->validate([
-            'startDate' => 'required|date',
-            'startTime' => 'required',
+            'start' => 'required',
             'location' => 'required',
         ]);
 
