@@ -20,6 +20,7 @@ return new class extends Migration
             $table->string('line_user_id');
             $table->string('phone_number');
             $table->string('location', 50);
+            $table->boolean('notified');
             $table->timestamps();
         });
     }
