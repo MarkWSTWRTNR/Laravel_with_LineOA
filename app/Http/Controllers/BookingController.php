@@ -48,6 +48,7 @@ class BookingController extends BaseController
         } else {
             try {
                 $payload = $request->all();
+                $payload['notified'] = false;
 
 //                if (!isset($payload['endDate'])) {
 //                    $payload['endDate'] = $payload['startDate'];
